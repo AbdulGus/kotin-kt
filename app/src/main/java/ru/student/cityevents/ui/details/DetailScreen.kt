@@ -77,18 +77,23 @@ fun DetailScreen(state: DetailUiState, onEvent: (DetailUiEvent) -> Unit, onBack:
             AsyncImage(event.imageUrl, event.name, Modifier.fillMaxWidth().height(260.dp), contentScale = ContentScale.Crop)
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(event.category, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                Text(event.category, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                     IconButton(onClick = { onEvent(DetailUiEvent.FavoriteClicked) }) {
                         Icon(if (event.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder, "Избранное")
                     }
                 }
                 Text(event.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text("${formatDate(event.date)} • ${event.time?.take(5) ?: "время уточняется"}")
-                Text("${event.venue}\n${event.city}", style = MaterialTheme.typography.bodyLarge)
+                Text("${event.venue}\nМосква", style = MaterialTheme.typography.bodyLarge)
+                event.ageRestriction?.let { Text("Возрастное ограничение: $it", style = MaterialTheme.typography.labelLarge) }
                 Text(
-                    event.minPrice?.let { "Цена: от ${it.toInt()} ${event.currency.orEmpty()}" } ?: "Цена появится у организатора",
+                    event.priceText?.let { "Цена: $it" } ?: "Цена появится у организатора",
                     style = MaterialTheme.typography.titleMedium
                 )
+                if (event.description.isNotBlank()) {
+                    Text("О событии", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(event.description, style = MaterialTheme.typography.bodyMedium)
+                }
                 Text("Количество", style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(onClick = { if (quantity > 1) quantity-- }) { Text("−") }
@@ -107,7 +112,7 @@ fun DetailScreen(state: DetailUiState, onEvent: (DetailUiEvent) -> Unit, onBack:
                     ) { Text("Открыть страницу организатора") }
                 }
                 Spacer(Modifier.height(16.dp))
-                Text("Учебная покупка не списывает деньги. Информация о событии получена через Ticketmaster Discovery API.", style = MaterialTheme.typography.bodySmall)
+                Text("Учебная покупка не списывает деньги. Информация о событии получена из открытой афиши KudaGo.", style = MaterialTheme.typography.bodySmall)
             }
         }
     }

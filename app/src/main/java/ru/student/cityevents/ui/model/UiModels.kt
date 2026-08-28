@@ -12,7 +12,6 @@ sealed interface LoadStatus {
 data class CatalogUiState(
     val events: List<EventEntity> = emptyList(),
     val query: String = "",
-    val city: String = "Berlin",
     val status: LoadStatus = LoadStatus.Loading
 )
 
@@ -41,14 +40,9 @@ data class TicketsUiState(val tickets: List<TicketWithEvent> = emptyList())
 sealed interface TicketsUiEvent { data class DeleteClicked(val ticketId: Long) : TicketsUiEvent }
 
 data class SettingsUiState(
-    val city: String = "Berlin",
-    val darkTheme: Boolean = false,
-    val saved: Boolean = false
+    val darkTheme: Boolean = false
 )
 
 sealed interface SettingsUiEvent {
-    data class CityChanged(val value: String) : SettingsUiEvent
     data class DarkThemeChanged(val enabled: Boolean) : SettingsUiEvent
-    data object SaveClicked : SettingsUiEvent
-    data object SavedMessageShown : SettingsUiEvent
 }

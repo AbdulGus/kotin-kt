@@ -3,13 +3,17 @@ package ru.student.cityevents.data
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
-import ru.student.cityevents.BuildConfig
 import ru.student.cityevents.data.local.EventDao
 import ru.student.cityevents.data.local.EventEntity
 import ru.student.cityevents.data.local.TicketEntity
 import ru.student.cityevents.data.local.TicketWithEvent
 import ru.student.cityevents.data.remote.ApiEvent
-import ru.student.cityevents.data.remote.TicketmasterApi
+import ru.student.cityevents.data.remote.ApiDate
+import ru.student.cityevents.data.remote.KudaGoApi
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,7 +22,7 @@ interface EventsRepository {
     fun observeFavorites(): Flow<List<EventEntity>>
     fun observeEvent(id: String): Flow<EventEntity?>
     fun observeTickets(): Flow<List<TicketWithEvent>>
-    suspend fun refresh(city: String): Result<Int>
+    suspend fun refresh(): Result<Int>
     suspend fun toggleFavorite(id: String)
     suspend fun buyTicket(eventId: String, quantity: Int, totalPrice: Double?)
     suspend fun deleteTicket(ticketId: Long)
@@ -26,7 +30,7 @@ interface EventsRepository {
 
 @Singleton
 class OfflineFirstEventsRepository @Inject constructor(
-    private val api: TicketmasterApi,
+    private val api: KudaGoApi,
     private val dao: EventDao
 ) : EventsRepository {
     override fun observeEvents(query: String): Flow<List<EventEntity>> =
@@ -36,14 +40,12 @@ class OfflineFirstEventsRepository @Inject constructor(
     override fun observeEvent(id: String) = dao.observeEvent(id)
     override fun observeTickets() = dao.observeTickets()
 
-    override suspend fun refresh(city: String): Result<Int> = withContext(Dispatchers.IO) {
+    override suspend fun refresh(): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {
-            check(BuildConfig.TICKETMASTER_API_KEY.isNotBlank()) {
-                "Добавьте TICKETMASTER_API_KEY в local.properties"
-            }
             val favorites = dao.favoriteIds().toSet()
-            val events = api.getEvents(BuildConfig.TICKETMASTER_API_KEY, city)._embedded?.events.orEmpty()
-                .map { it.toEntity(it.id in favorites) }
+            val now = Instant.now().epochSecond
+            val events = api.getMoscowEvents(actualSince = now).results
+                .map { it.toEntity(it.id.toString() in favorites, now) }
             dao.upsertEvents(events)
             events.size
         }
@@ -63,23 +65,49 @@ class OfflineFirstEventsRepository @Inject constructor(
     }
 }
 
-private fun ApiEvent.toEntity(favorite: Boolean): EventEntity {
-    val venue = _embedded?.venues?.firstOrNull()
-    val classification = classifications.firstOrNull()
-    val price = priceRanges.firstOrNull()
+private fun ApiEvent.toEntity(favorite: Boolean, now: Long): EventEntity {
+    val eventDate = dates.bestDate(now)
+    val dateTime = eventDate?.start?.takeIf { it >= now }
+        ?.let { Instant.ofEpochSecond(it).atZone(MOSCOW_ZONE) }
+    val priceNumber = Regex("\\d[\\d ]*").find(price)?.value?.replace(" ", "")?.toDoubleOrNull()
     return EventEntity(
-        id = id,
-        name = name,
-        imageUrl = images.maxByOrNull { it.width }?.url,
-        date = dates.start.localDate,
-        time = dates.start.localTime,
-        venue = venue?.name ?: "Площадка уточняется",
-        city = venue?.city?.name ?: "Город не указан",
-        category = classification?.genre?.name ?: classification?.segment?.name ?: "Событие",
-        minPrice = price?.min,
-        maxPrice = price?.max,
-        currency = price?.currency,
-        ticketUrl = url,
+        id = id.toString(),
+        name = title.replaceFirstChar { it.uppercase() },
+        imageUrl = images.firstOrNull()?.image,
+        date = dateTime?.toLocalDate()?.format(DateTimeFormatter.ISO_LOCAL_DATE)
+            ?: LocalDate.now(MOSCOW_ZONE).format(DateTimeFormatter.ISO_LOCAL_DATE),
+        time = dateTime?.toLocalTime()?.format(DateTimeFormatter.ofPattern("HH:mm")),
+        venue = place?.title ?: "Площадка уточняется",
+        city = "Москва",
+        category = categories.firstOrNull().toRussianCategory(),
+        minPrice = priceNumber,
+        maxPrice = null,
+        currency = if (priceNumber != null) "₽" else null,
+        ticketUrl = site_url,
+        description = description,
+        ageRestriction = age_restriction.ifBlank { null },
+        priceText = price.ifBlank { null },
         isFavorite = favorite
     )
 }
+
+private fun List<ApiDate>.bestDate(now: Long): ApiDate? =
+    filter { it.end >= now }
+        .minByOrNull { date -> if (date.start >= now) date.start else Long.MAX_VALUE - date.end }
+
+private fun String?.toRussianCategory(): String = when (this) {
+    "concert" -> "Концерт"
+    "theater" -> "Театр"
+    "exhibition" -> "Выставка"
+    "festival" -> "Фестиваль"
+    "education" -> "Образование"
+    "kids" -> "Детям"
+    "recreation" -> "Отдых"
+    "entertainment" -> "Развлечения"
+    "cinema" -> "Кино"
+    "party" -> "Вечеринка"
+    "sport" -> "Спорт"
+    else -> "Событие"
+}
+
+private val MOSCOW_ZONE: ZoneId = ZoneId.of("Europe/Moscow")

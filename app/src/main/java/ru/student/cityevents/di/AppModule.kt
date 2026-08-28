@@ -16,7 +16,7 @@ import ru.student.cityevents.data.EventsRepository
 import ru.student.cityevents.data.OfflineFirstEventsRepository
 import ru.student.cityevents.data.local.AppDatabase
 import ru.student.cityevents.data.local.EventDao
-import ru.student.cityevents.data.remote.TicketmasterApi
+import ru.student.cityevents.data.remote.KudaGoApi
 import javax.inject.Singleton
 
 @Module
@@ -24,19 +24,21 @@ import javax.inject.Singleton
 object AppModule {
     @Provides @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
-        Room.databaseBuilder(context, AppDatabase::class.java, "city_events.db").build()
+        Room.databaseBuilder(context, AppDatabase::class.java, "city_events.db")
+            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .build()
 
     @Provides fun provideDao(database: AppDatabase): EventDao = database.eventDao()
 
     @Provides @Singleton
-    fun provideApi(): TicketmasterApi {
+    fun provideApi(): KudaGoApi {
         val logger = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
         return Retrofit.Builder()
-            .baseUrl("https://app.ticketmaster.com/")
+            .baseUrl("https://kudago.com/")
             .client(OkHttpClient.Builder().addInterceptor(logger).build())
             .addConverterFactory(GsonConverterFactory.create(GsonBuilder().create()))
             .build()
-            .create(TicketmasterApi::class.java)
+            .create(KudaGoApi::class.java)
     }
 
     @Provides @Singleton

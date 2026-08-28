@@ -29,7 +29,7 @@ class DetailViewModelTest {
     @After fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun `favorite click delegates event id to repository`() = runTest(dispatcher) {
+    fun `нажатие на избранное передает id события в репозиторий`() = runTest(dispatcher) {
         val repository = FakeRepository()
         val viewModel = DetailViewModel(SavedStateHandle(mapOf("eventId" to "event-1")), repository)
 
@@ -40,7 +40,7 @@ class DetailViewModelTest {
     }
 
     @Test
-    fun `buy click stores quantity and calculated total`() = runTest(dispatcher) {
+    fun `при покупке сохраняется количество и рассчитанная сумма`() = runTest(dispatcher) {
         val repository = FakeRepository()
         val viewModel = DetailViewModel(SavedStateHandle(mapOf("eventId" to "event-1")), repository)
 
@@ -61,9 +61,9 @@ class DetailViewModelTest {
 private class FakeRepository : EventsRepository {
     private val event = MutableStateFlow(
         EventEntity(
-            id = "event-1", name = "Test concert", imageUrl = null,
-            date = "2026-09-01", time = "19:00:00", venue = "Arena",
-            city = "Berlin", category = "Music", minPrice = 25.0,
+            id = "event-1", name = "Тестовый концерт", imageUrl = null,
+            date = "2026-09-01", time = "19:00:00", venue = "Тестовая площадка",
+            city = "Москва", category = "Концерт", minPrice = 25.0,
             maxPrice = 50.0, currency = "EUR", ticketUrl = null
         )
     )
@@ -76,7 +76,7 @@ private class FakeRepository : EventsRepository {
     override fun observeFavorites(): Flow<List<EventEntity>> = MutableStateFlow(emptyList())
     override fun observeEvent(id: String): Flow<EventEntity?> = event
     override fun observeTickets(): Flow<List<TicketWithEvent>> = MutableStateFlow(emptyList())
-    override suspend fun refresh(city: String) = Result.success(1)
+    override suspend fun refresh() = Result.success(1)
     override suspend fun toggleFavorite(id: String) { favoriteId = id }
     override suspend fun buyTicket(eventId: String, quantity: Int, totalPrice: Double?) {
         boughtEventId = eventId

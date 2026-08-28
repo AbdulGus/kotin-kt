@@ -35,8 +35,9 @@ fun CatalogScreen(state: CatalogUiState, onEvent: (CatalogUiEvent) -> Unit, onOp
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            Text("События в городе", style = MaterialTheme.typography.headlineMedium)
-            Text(state.city, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Text("Куда сходить", style = MaterialTheme.typography.headlineMedium)
+            Text("Москва", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Text("Концерты, выставки и городские события", style = MaterialTheme.typography.bodyMedium)
         }
         item {
             OutlinedTextField(
@@ -63,7 +64,7 @@ fun CatalogScreen(state: CatalogUiState, onEvent: (CatalogUiEvent) -> Unit, onOp
                     if (state.status is LoadStatus.Loading) CircularProgressIndicator()
                     else EmptyState(
                         if (state.query.isBlank()) "Событий пока нет" else "Ничего не найдено",
-                        if (state.query.isBlank()) "Проверьте API-ключ и попробуйте обновить афишу" else "Попробуйте изменить запрос"
+                        if (state.query.isBlank()) "Проверьте интернет и попробуйте обновить афишу" else "Попробуйте изменить запрос"
                     )
                 }
             }

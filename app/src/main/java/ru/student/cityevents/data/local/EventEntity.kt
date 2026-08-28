@@ -17,6 +17,9 @@ data class EventEntity(
     val maxPrice: Double?,
     val currency: String?,
     val ticketUrl: String?,
+    val description: String = "",
+    val ageRestriction: String? = null,
+    val priceText: String? = null,
     val isFavorite: Boolean = false,
     val updatedAt: Long = System.currentTimeMillis()
 )

@@ -1,16 +1,9 @@
-import java.util.Properties
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.kapt")
     id("com.google.dagger.hilt.android")
-}
-
-val localProperties = Properties().apply {
-    val file = rootProject.file("local.properties")
-    if (file.exists()) file.inputStream().use(::load)
 }
 
 android {
@@ -24,16 +17,10 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField(
-            "String",
-            "TICKETMASTER_API_KEY",
-            "\"${localProperties.getProperty("TICKETMASTER_API_KEY", "")}\""
-        )
     }
 
     buildFeatures {
         compose = true
-        buildConfig = true
     }
 
     compileOptions {

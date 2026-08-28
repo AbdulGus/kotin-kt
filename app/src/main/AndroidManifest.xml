@@ -6,7 +6,7 @@
         android:name=".CityEventsApplication"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher_foreground"
-        android:label="Афиша города"
+        android:label="Афиша Москвы"
         android:roundIcon="@drawable/ic_launcher_foreground"
         android:supportsRtl="true"
         android:theme="@style/Theme.CityEvents">
