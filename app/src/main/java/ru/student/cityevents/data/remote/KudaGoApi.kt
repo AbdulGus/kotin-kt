@@ -33,11 +33,11 @@ data class ApiEvent(
     val place: ApiPlace? = null,
     val dates: List<ApiDate> = emptyList(),
     val images: List<ApiImage> = emptyList(),
-    val description: String = "",
+    val description: String? = null,
     val site_url: String? = null,
     val categories: List<String> = emptyList(),
-    val price: String = "",
-    val age_restriction: String = ""
+    val price: String? = null,
+    val age_restriction: String? = null
 )
 
 data class ApiDate(val start: Long, val end: Long)

@@ -69,7 +69,7 @@ private fun ApiEvent.toEntity(favorite: Boolean, now: Long): EventEntity {
     val eventDate = dates.bestDate(now)
     val dateTime = eventDate?.start?.takeIf { it >= now }
         ?.let { Instant.ofEpochSecond(it).atZone(MOSCOW_ZONE) }
-    val priceNumber = Regex("\\d[\\d ]*").find(price)?.value?.replace(" ", "")?.toDoubleOrNull()
+    val priceNumber = Regex("\\d[\\d ]*").find(price.orEmpty())?.value?.replace(" ", "")?.toDoubleOrNull()
     return EventEntity(
         id = id.toString(),
         name = title.replaceFirstChar { it.uppercase() },
@@ -84,9 +84,9 @@ private fun ApiEvent.toEntity(favorite: Boolean, now: Long): EventEntity {
         maxPrice = null,
         currency = if (priceNumber != null) "₽" else null,
         ticketUrl = site_url,
-        description = description,
-        ageRestriction = age_restriction.ifBlank { null },
-        priceText = price.ifBlank { null },
+        description = description.orEmpty(),
+        ageRestriction = age_restriction?.takeIf { it.isNotBlank() },
+        priceText = price?.takeIf { it.isNotBlank() },
         isFavorite = favorite
     )
 }
