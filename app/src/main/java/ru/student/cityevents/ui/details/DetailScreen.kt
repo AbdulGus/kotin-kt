@@ -109,7 +109,7 @@ fun DetailScreen(state: DetailUiState, onEvent: (DetailUiEvent) -> Unit, onBack:
                     FilledTonalButton(
                         onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("Открыть страницу организатора") }
+                    ) { Text("Открыть событие на KudaGo") }
                 }
                 Spacer(Modifier.height(16.dp))
                 Text("Учебная покупка не списывает деньги. Информация о событии получена из открытой афиши KudaGo.", style = MaterialTheme.typography.bodySmall)

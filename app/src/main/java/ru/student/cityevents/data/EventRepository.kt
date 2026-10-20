@@ -34,7 +34,9 @@ class OfflineFirstEventsRepository @Inject constructor(
     private val dao: EventDao
 ) : EventsRepository {
     override fun observeEvents(query: String): Flow<List<EventEntity>> =
-        if (query.isBlank()) dao.observeEvents() else dao.searchEvents(query.trim())
+        if (query.isBlank()) dao.observeEvents() else dao.searchEvents(
+            query.trim().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        )
 
     override fun observeFavorites() = dao.observeFavorites()
     override fun observeEvent(id: String) = dao.observeEvent(id)
@@ -42,9 +44,10 @@ class OfflineFirstEventsRepository @Inject constructor(
 
     override suspend fun refresh(): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {
-            val favorites = dao.favoriteIds().toSet()
             val now = Instant.now().epochSecond
-            val events = api.getMoscowEvents(actualSince = now).results
+            val response = api.getMoscowEvents(actualSince = now)
+            val favorites = dao.favoriteIds().toSet()
+            val events = response.results
                 .map { it.toEntity(it.id.toString() in favorites, now) }
             dao.upsertEvents(events)
             events.size

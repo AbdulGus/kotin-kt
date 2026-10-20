@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import ru.student.cityevents.data.EventsRepository
-import ru.student.cityevents.data.settings.SettingsRepository
 import ru.student.cityevents.ui.model.CatalogUiEvent
 import ru.student.cityevents.ui.model.CatalogUiState
 import ru.student.cityevents.ui.model.LoadStatus
@@ -20,14 +19,13 @@ import javax.inject.Inject
 @HiltViewModel
 @OptIn(ExperimentalCoroutinesApi::class)
 class CatalogViewModel @Inject constructor(
-    private val repository: EventsRepository,
-    private val settingsRepository: SettingsRepository
+    private val repository: EventsRepository
 ) : ViewModel() {
     private val query = MutableStateFlow("")
     private val status = MutableStateFlow<LoadStatus>(LoadStatus.Loading)
     private val events = query.flatMapLatest(repository::observeEvents)
 
-    val uiState = combine(events, query, settingsRepository.settings, status) { items, search, settings, load ->
+    val uiState = combine(events, query, status) { items, search, load ->
         CatalogUiState(items, search, load)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CatalogUiState())
 
@@ -45,8 +43,8 @@ class CatalogViewModel @Inject constructor(
         status.value = LoadStatus.Loading
         repository.refresh()
             .onSuccess { status.value = LoadStatus.Idle }
-            .onFailure { error ->
-                status.value = LoadStatus.Error(error.message ?: "Не удалось обновить афишу")
+            .onFailure {
+                status.value = LoadStatus.Error("Не удалось обновить афишу. Проверьте интернет и попробуйте ещё раз.")
             }
     }
 }
