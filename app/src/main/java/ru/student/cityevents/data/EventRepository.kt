@@ -8,10 +8,11 @@ import ru.student.cityevents.data.local.EventEntity
 import ru.student.cityevents.data.local.TicketEntity
 import ru.student.cityevents.data.local.TicketWithEvent
 import ru.student.cityevents.data.remote.ApiEvent
-import ru.student.cityevents.data.remote.ApiDate
-import ru.student.cityevents.data.remote.KudaGoApi
+import ru.student.cityevents.data.remote.StungEventsApi
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -30,7 +31,7 @@ interface EventsRepository {
 
 @Singleton
 class OfflineFirstEventsRepository @Inject constructor(
-    private val api: KudaGoApi,
+    private val api: StungEventsApi,
     private val dao: EventDao
 ) : EventsRepository {
     override fun observeEvents(query: String): Flow<List<EventEntity>> =
@@ -44,11 +45,12 @@ class OfflineFirstEventsRepository @Inject constructor(
 
     override suspend fun refresh(): Result<Int> = withContext(Dispatchers.IO) {
         runCatching {
-            val now = Instant.now().epochSecond
-            val response = api.getMoscowEvents(actualSince = now)
+            val response = api.getEvents()
+            check(response.ok) { "Сервис событий вернул ошибку" }
             val favorites = dao.favoriteIds().toSet()
-            val events = response.results
-                .map { it.toEntity(it.id.toString() in favorites, now) }
+            val events = response.events
+                .map { it.toEntity(it.id in favorites) }
+            check(events.isNotEmpty()) { "На сервере пока нет событий Лондона" }
             dao.upsertEvents(events)
             events.size
         }
@@ -68,49 +70,47 @@ class OfflineFirstEventsRepository @Inject constructor(
     }
 }
 
-private fun ApiEvent.toEntity(favorite: Boolean, now: Long): EventEntity {
-    val eventDate = dates.bestDate(now)
-    val dateTime = eventDate?.start?.takeIf { it >= now }
-        ?.let { Instant.ofEpochSecond(it).atZone(MOSCOW_ZONE) }
-    val priceNumber = Regex("\\d[\\d ]*").find(price.orEmpty())?.value?.replace(" ", "")?.toDoubleOrNull()
+private fun ApiEvent.toEntity(favorite: Boolean): EventEntity {
+    val listedPrice = minPrice?.takeIf { it > 0 }
+    val dateTime = startUtc?.let { value ->
+        runCatching { Instant.parse(value).atZone(LONDON_ZONE) }.getOrNull()
+            ?: runCatching { OffsetDateTime.parse(value).atZoneSameInstant(LONDON_ZONE) }.getOrNull()
+            ?: runCatching {
+                LocalDateTime.parse(value.replace(' ', 'T'))
+                    .atZone(ZoneId.of("UTC"))
+                    .withZoneSameInstant(LONDON_ZONE)
+            }.getOrNull()
+    }
     return EventEntity(
-        id = id.toString(),
+        id = id,
         name = title.replaceFirstChar { it.uppercase() },
-        imageUrl = images.firstOrNull()?.image,
+        imageUrl = imageUrl,
         date = dateTime?.toLocalDate()?.format(DateTimeFormatter.ISO_LOCAL_DATE)
-            ?: LocalDate.now(MOSCOW_ZONE).format(DateTimeFormatter.ISO_LOCAL_DATE),
+            ?: startUtc?.take(10)?.takeIf { runCatching { LocalDate.parse(it) }.isSuccess }
+            ?: LocalDate.now(LONDON_ZONE).format(DateTimeFormatter.ISO_LOCAL_DATE),
         time = dateTime?.toLocalTime()?.format(DateTimeFormatter.ofPattern("HH:mm")),
-        venue = place?.title ?: "Площадка уточняется",
-        city = "Москва",
-        category = categories.firstOrNull().toRussianCategory(),
-        minPrice = priceNumber,
-        maxPrice = null,
-        currency = if (priceNumber != null) "₽" else null,
-        ticketUrl = site_url,
-        description = description.orEmpty(),
-        ageRestriction = age_restriction?.takeIf { it.isNotBlank() },
-        priceText = price?.takeIf { it.isNotBlank() },
+        venue = venueName?.takeIf { it.isNotBlank() } ?: "Площадка уточняется",
+        city = "Лондон",
+        category = category.toRussianCategory(),
+        minPrice = listedPrice,
+        maxPrice = maxPrice?.takeIf { it > 0 },
+        currency = currency?.takeIf { listedPrice != null },
+        ticketUrl = ticketUrl,
+        description = description.orEmpty().take(500).trim(),
+        priceText = listedPrice?.let { "от ${it.toInt()} ${currency.orEmpty()}" },
         isFavorite = favorite
     )
 }
 
-private fun List<ApiDate>.bestDate(now: Long): ApiDate? =
-    filter { it.end >= now }
-        .minByOrNull { date -> if (date.start >= now) date.start else Long.MAX_VALUE - date.end }
-
 private fun String?.toRussianCategory(): String = when (this) {
-    "concert" -> "Концерт"
-    "theater" -> "Театр"
-    "exhibition" -> "Выставка"
-    "festival" -> "Фестиваль"
-    "education" -> "Образование"
-    "kids" -> "Детям"
-    "recreation" -> "Отдых"
-    "entertainment" -> "Развлечения"
+    "concerts" -> "Концерт"
+    "festivals" -> "Фестиваль"
+    "sports" -> "Спорт"
     "cinema" -> "Кино"
-    "party" -> "Вечеринка"
-    "sport" -> "Спорт"
+    "esports" -> "Киберспорт"
+    "performing_arts" -> "Театр"
+    "outdoors" -> "На открытом воздухе"
     else -> "Событие"
 }
 
-private val MOSCOW_ZONE: ZoneId = ZoneId.of("Europe/Moscow")
+private val LONDON_ZONE: ZoneId = ZoneId.of("Europe/London")

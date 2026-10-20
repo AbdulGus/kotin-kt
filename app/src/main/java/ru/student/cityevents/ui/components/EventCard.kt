@@ -42,12 +42,14 @@ fun EventCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        AsyncImage(
-            model = event.imageUrl,
-            contentDescription = event.name,
-            modifier = Modifier.fillMaxWidth().height(170.dp),
-            contentScale = ContentScale.Crop
-        )
+        if (!event.imageUrl.isNullOrBlank()) {
+            AsyncImage(
+                model = event.imageUrl,
+                contentDescription = event.name,
+                modifier = Modifier.fillMaxWidth().height(170.dp),
+                contentScale = ContentScale.Crop
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),

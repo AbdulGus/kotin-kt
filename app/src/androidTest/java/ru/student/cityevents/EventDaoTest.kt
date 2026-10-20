@@ -12,10 +12,9 @@ import ru.student.cityevents.data.local.AppDatabase
 import ru.student.cityevents.data.local.EventEntity
 import ru.student.cityevents.data.local.TicketEntity
 import ru.student.cityevents.data.OfflineFirstEventsRepository
-import ru.student.cityevents.data.remote.ApiDate
 import ru.student.cityevents.data.remote.ApiEvent
 import ru.student.cityevents.data.remote.EventsResponse
-import ru.student.cityevents.data.remote.KudaGoApi
+import ru.student.cityevents.data.remote.StungEventsApi
 import java.time.Instant
 
 @RunWith(AndroidJUnit4::class)
@@ -33,11 +32,11 @@ class EventDaoTest {
                 date = "2026-10-20",
                 time = "19:00",
                 venue = "Зал",
-                city = "Москва",
+                city = "Лондон",
                 category = "Концерт",
                 minPrice = 500.0,
                 maxPrice = null,
-                currency = "₽",
+                currency = "GBP",
                 ticketUrl = null,
                 isFavorite = true
             )
@@ -61,7 +60,7 @@ class EventDaoTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val database = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
         try {
-            val api = FakeKudaGoApi()
+            val api = FakeStungEventsApi()
             val repository = OfflineFirstEventsRepository(api, database.eventDao())
 
             assertEquals(true, repository.refresh().isSuccess)
@@ -85,27 +84,20 @@ class EventDaoTest {
     }
 }
 
-private class FakeKudaGoApi : KudaGoApi {
+private class FakeStungEventsApi : StungEventsApi {
     var fail = false
 
-    override suspend fun getMoscowEvents(
-        location: String,
-        language: String,
-        pageSize: Int,
-        actualSince: Long,
-        fields: String,
-        expand: String,
-        textFormat: String,
-        orderBy: String
-    ): EventsResponse {
+    override suspend fun getEvents(city: String, limit: Int): EventsResponse {
         if (fail) error("Network unavailable")
         return EventsResponse(
-            results = listOf(
+            ok = true,
+            events = listOf(
                 ApiEvent(
-                    id = 42,
+                    id = "42",
                     title = "Концерт",
-                    dates = listOf(ApiDate(Instant.now().epochSecond + 3600, Instant.now().epochSecond + 7200)),
-                    price = "500 рублей"
+                    startUtc = Instant.now().plusSeconds(3600).toString(),
+                    minPrice = 500.0,
+                    currency = "GBP"
                 )
             )
         )

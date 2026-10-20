@@ -16,7 +16,7 @@ import ru.student.cityevents.data.EventsRepository
 import ru.student.cityevents.data.OfflineFirstEventsRepository
 import ru.student.cityevents.data.local.AppDatabase
 import ru.student.cityevents.data.local.EventDao
-import ru.student.cityevents.data.remote.KudaGoApi
+import ru.student.cityevents.data.remote.StungEventsApi
 import javax.inject.Singleton
 
 @Module
@@ -31,14 +31,14 @@ object AppModule {
     @Provides fun provideDao(database: AppDatabase): EventDao = database.eventDao()
 
     @Provides @Singleton
-    fun provideApi(): KudaGoApi {
+    fun provideApi(): StungEventsApi {
         val logger = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
         return Retrofit.Builder()
-            .baseUrl("https://kudago.com/")
+            .baseUrl("https://api.stungevents.com/")
             .client(OkHttpClient.Builder().addInterceptor(logger).build())
             .addConverterFactory(GsonConverterFactory.create(GsonBuilder().create()))
             .build()
-            .create(KudaGoApi::class.java)
+            .create(StungEventsApi::class.java)
     }
 
     @Provides @Singleton

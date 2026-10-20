@@ -25,8 +25,8 @@ fun SettingsScreen(state: SettingsUiState, onEvent: (SettingsUiEvent) -> Unit) {
             Switch(state.darkTheme, { onEvent(SettingsUiEvent.DarkThemeChanged(it)) })
         }
         Text("О приложении", style = MaterialTheme.typography.titleLarge)
-        Text("«Афиша Москвы» помогает найти интересные события, сохранить их в избранное и оформить учебный билет.")
-        Text("Источник данных — открытый API KudaGo. Список мероприятий сохраняется на устройстве и доступен без интернета.")
-        Text("Версия 1.1", style = MaterialTheme.typography.bodySmall)
+        Text("«Афиша Лондона» помогает найти интересные события, сохранить их в избранное и оформить учебный билет.")
+        Text("Источник данных — открытый API StungEvents. Список мероприятий сохраняется на устройстве и доступен без интернета.")
+        Text("Версия 1.2", style = MaterialTheme.typography.bodySmall)
     }
 }

@@ -74,7 +74,9 @@ fun DetailScreen(state: DetailUiState, onEvent: (DetailUiEvent) -> Unit, onBack:
             return@Scaffold
         }
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
-            AsyncImage(event.imageUrl, event.name, Modifier.fillMaxWidth().height(260.dp), contentScale = ContentScale.Crop)
+            if (!event.imageUrl.isNullOrBlank()) {
+                AsyncImage(event.imageUrl, event.name, Modifier.fillMaxWidth().height(260.dp), contentScale = ContentScale.Crop)
+            }
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(event.category, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
@@ -84,7 +86,7 @@ fun DetailScreen(state: DetailUiState, onEvent: (DetailUiEvent) -> Unit, onBack:
                 }
                 Text(event.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text("${formatDate(event.date)} • ${event.time?.take(5) ?: "время уточняется"}")
-                Text("${event.venue}\nМосква", style = MaterialTheme.typography.bodyLarge)
+                Text("${event.venue}\n${event.city}", style = MaterialTheme.typography.bodyLarge)
                 event.ageRestriction?.let { Text("Возрастное ограничение: $it", style = MaterialTheme.typography.labelLarge) }
                 Text(
                     event.priceText?.let { "Цена: $it" } ?: "Цена появится у организатора",
@@ -109,10 +111,10 @@ fun DetailScreen(state: DetailUiState, onEvent: (DetailUiEvent) -> Unit, onBack:
                     FilledTonalButton(
                         onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) },
                         modifier = Modifier.fillMaxWidth()
-                    ) { Text("Открыть событие на KudaGo") }
+                    ) { Text("Открыть билеты у продавца") }
                 }
                 Spacer(Modifier.height(16.dp))
-                Text("Учебная покупка не списывает деньги. Информация о событии получена из открытой афиши KudaGo.", style = MaterialTheme.typography.bodySmall)
+                Text("Учебная покупка не списывает деньги. Для настоящей покупки перейдите на сайт продавца.", style = MaterialTheme.typography.bodySmall)
             }
         }
     }

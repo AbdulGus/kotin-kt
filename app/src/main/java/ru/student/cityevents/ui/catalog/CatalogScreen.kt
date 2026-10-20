@@ -36,8 +36,8 @@ fun CatalogScreen(state: CatalogUiState, onEvent: (CatalogUiEvent) -> Unit, onOp
     ) {
         item {
             Text("Куда сходить", style = MaterialTheme.typography.headlineMedium)
-            Text("Москва", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-            Text("Концерты, выставки и городские события", style = MaterialTheme.typography.bodyMedium)
+            Text("Лондон", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Text("Концерты, спектакли и городские события", style = MaterialTheme.typography.bodyMedium)
         }
         item {
             OutlinedTextField(

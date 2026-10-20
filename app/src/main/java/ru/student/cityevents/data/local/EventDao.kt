@@ -9,13 +9,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface EventDao {
-    @Query("SELECT * FROM events ORDER BY date, time")
+    @Query("SELECT * FROM events WHERE city = 'Лондон' ORDER BY date, time")
     fun observeEvents(): Flow<List<EventEntity>>
 
     @Query(
-        "SELECT * FROM events WHERE name LIKE '%' || :query || '%' ESCAPE '\\' " +
+        "SELECT * FROM events WHERE city = 'Лондон' AND (name LIKE '%' || :query || '%' ESCAPE '\\' " +
             "OR venue LIKE '%' || :query || '%' ESCAPE '\\' " +
-            "OR category LIKE '%' || :query || '%' ESCAPE '\\' ORDER BY date, time"
+            "OR category LIKE '%' || :query || '%' ESCAPE '\\') ORDER BY date, time"
     )
     fun searchEvents(query: String): Flow<List<EventEntity>>
 
